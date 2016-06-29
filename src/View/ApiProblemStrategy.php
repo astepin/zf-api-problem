@@ -41,7 +41,7 @@ class ApiProblemStrategy extends JsonStrategy
 
         if (!$model instanceof ApiProblemModel) {
             // unrecognized model; do nothing
-            return;
+            return null;
         }
 
         // ApiProblemModel found

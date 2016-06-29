@@ -6,8 +6,8 @@
 
 namespace ZF\ApiProblem\Factory;
 
-use Zend\ServiceManager\FactoryInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
+use Interop\Container\ContainerInterface;
+use Zend\ServiceManager\Factory\FactoryInterface;
 use ZF\ApiProblem\Listener\RenderErrorListener;
 
 class RenderErrorListenerFactory implements FactoryInterface
@@ -16,9 +16,9 @@ class RenderErrorListenerFactory implements FactoryInterface
      * {@inheritDoc}
      * @return RenderErrorListener
      */
-    public function createService(ServiceLocatorInterface $serviceLocator)
+    public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
-        $config            = $serviceLocator->get('Config');
+        $config            = $container->get('Config');
         $displayExceptions = false;
 
         if (isset($config['view_manager'])

@@ -15,7 +15,6 @@ use Zend\View\Model\ModelInterface;
 use ZF\ApiProblem\ApiProblem;
 use ZF\ApiProblem\ApiProblemResponse;
 use ZF\ApiProblem\View\ApiProblemModel;
-use ZF\ApiProblem\Exception\ProblemExceptionInterface;
 
 /**
  * ApiProblemListener
@@ -59,8 +58,9 @@ class ApiProblemListener extends AbstractListenerAggregate
 
     /**
      * @param    EventManagerInterface $events
+     * @param int $priority
      */
-    public function attach(EventManagerInterface $events)
+    public function attach(EventManagerInterface $events, $priority = 100)
     {
         $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER, [$this, 'onRender'], 1000);
         $this->listeners[] = $events->attach(MvcEvent::EVENT_DISPATCH_ERROR, [$this, 'onDispatchError'], 100);
@@ -70,7 +70,7 @@ class ApiProblemListener extends AbstractListenerAggregate
             'Zend\Stdlib\DispatchableInterface',
             MvcEvent::EVENT_DISPATCH,
             [$this, 'onDispatch'],
-            100
+            $priority
         );
     }
 
@@ -137,7 +137,8 @@ class ApiProblemListener extends AbstractListenerAggregate
 
         // Attach the ApiProblem render.error listener
         $events = $app->getEventManager();
-        $events->attach($services->get('ZF\ApiProblem\RenderErrorListener'));
+
+        $services->get('ZF\ApiProblem\RenderErrorListener')->attach($events);
     }
 
     /**
@@ -152,14 +153,14 @@ class ApiProblemListener extends AbstractListenerAggregate
     public function onDispatchError(MvcEvent $e)
     {
         if (!$this->validateErrorEvent($e)) {
-            return;
+            return null;
         }
 
         // Marshall an ApiProblem and view model based on the exception
         $exception = $e->getParam('exception');
         if (! $exception instanceof \Exception) {
             // If it's not an exception, do not know what to do.
-            return;
+            return null;
         }
 
         $e->stopPropagation();

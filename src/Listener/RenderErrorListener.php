@@ -25,10 +25,11 @@ class RenderErrorListener extends AbstractListenerAggregate
 
     /**
      * @param EventManagerInterface $events
+     * @param int $priority
      */
-    public function attach(EventManagerInterface $events)
+    public function attach(EventManagerInterface $events, $priority = 100)
     {
-        $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER_ERROR, [$this, 'onRenderError'], 100);
+        $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER_ERROR, [$this, 'onRenderError'], $priority);
     }
 
     /**
