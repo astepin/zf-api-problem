@@ -6,8 +6,11 @@
 
 namespace ZF\ApiProblem;
 
+use Zend\Mvc\Application;
 use Zend\Mvc\ResponseSender\SendResponseEvent;
 use Zend\Mvc\MvcEvent;
+use ZF\ApiProblem\Listener\ApiProblemListener;
+use ZF\ApiProblem\View\ApiProblemStrategy;
 
 /**
  * ZF2 module
@@ -21,11 +24,11 @@ class Module
      */
     public function getAutoloaderConfig()
     {
-        return array(
-            'Zend\Loader\StandardAutoloader' => array('namespaces' => array(
+        return [
+            'Zend\Loader\StandardAutoloader' => ['namespaces' => [
                 __NAMESPACE__ => __DIR__ . '/src/',
-            ))
-        );
+            ]]
+        ];
     }
 
     /**
@@ -47,12 +50,15 @@ class Module
      */
     public function onBootstrap($e)
     {
+        /** @var Application $app */
         $app            = $e->getTarget();
         $serviceManager = $app->getServiceManager();
         $eventManager   = $app->getEventManager();
 
-        $eventManager->attach($serviceManager->get('ZF\ApiProblem\ApiProblemListener'));
-        $eventManager->attach(MvcEvent::EVENT_RENDER, array($this, 'onRender'), 100);
+        /** @var ApiProblemListener $apiProblemListener */
+        $apiProblemListener = $serviceManager->get('ZF\ApiProblem\ApiProblemListener');
+        $apiProblemListener->attach($eventManager);
+        $eventManager->attach(MvcEvent::EVENT_RENDER, [$this, 'onRender'], 100);
 
         $sendResponseListener = $serviceManager->get('SendResponseListener');
         $sendResponseListener->getEventManager()->attach(
@@ -71,6 +77,7 @@ class Module
      */
     public function onRender($e)
     {
+        /** @var Application $app */
         $app      = $e->getTarget();
         $services = $app->getServiceManager();
 
@@ -80,7 +87,9 @@ class Module
 
             // register at high priority, to "beat" normal json strategy registered
             // via view manager, as well as HAL strategy.
-            $events->attach($services->get('ZF\ApiProblem\ApiProblemStrategy'), 400);
+            /** @var ApiProblemStrategy $apiProblemStrategy */
+            $apiProblemStrategy = $services->get('ZF\ApiProblem\ApiProblemStrategy');
+            $apiProblemStrategy->attach($events, 400);
         }
     }
 }
